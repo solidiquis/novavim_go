@@ -106,7 +106,8 @@ func (sn *session) AddLine(key byte) {
 		sn.CursorRow++
 	}
 
-	ansi.CursorSetPos(sn.CursorRow, CURSOR_COL_START)
+	sn.CursorCol = sn.ColOffset
+	ansi.CursorSetPos(sn.CursorRow, sn.ColOffset)
 }
 
 func (sn *session) SetMode(mode string) {
@@ -116,4 +117,54 @@ func (sn *session) SetMode(mode string) {
 	ansi.EraseLine()
 	fmt.Print(ansi.Bright(mode))
 	ansi.CursorRestorePos()
+}
+
+func (sn *session) Backspace() {
+	if sn.CursorCol-1 < sn.ColOffset {
+		return
+	}
+
+	sn.Lines[sn.CursorRow] = sn.Lines[sn.CursorRow][:len(sn.Lines[sn.CursorRow])-1]
+	ansi.Backspace()
+	sn.CursorCol--
+}
+
+func (sn *session) CursorRight(n int) {
+	if sn.CursorCol+n > sn.ColOffset+len(sn.Lines[sn.CursorRow]) {
+		return
+	}
+
+	sn.CursorCol += n
+	ansi.CursorForward(n)
+}
+
+func (sn *session) CursorLeft(n int) {
+	if sn.CursorCol-n < sn.ColOffset {
+		return
+	}
+
+	sn.CursorCol -= n
+	ansi.CursorBackward(n)
+}
+
+func (sn *session) CursorDown(n int) {
+	if sn.CursorRow+n > sn.LastLine {
+		return
+	}
+
+	sn.CursorRow += n
+
+	ln, ok := sn.Lines[sn.CursorRow]
+	if !ok {
+		sn.CursorColHome()
+		return
+	}
+
+	col := sn.ColOffset + len(ln)
+	ansi.CursorSetPos(sn.CursorRow, col)
+}
+
+func (sn *session) CursorColHome() {
+	sn.CursorCol = sn.ColOffset
+	ansi.CursorSetPos(sn.CursorRow, sn.CursorCol)
 }

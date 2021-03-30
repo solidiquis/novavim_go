@@ -14,7 +14,10 @@ func main() {
 	go sn.WinResizeListener()
 	go ansi.GetChar(stdin)
 
+	wr := Debug("ttys014")
+
 	for {
+		wr([]byte(fmt.Sprint(sn.CursorCol)))
 		select {
 		case ch := <-stdin:
 			if ch[0] == VI_ESC {
@@ -27,15 +30,14 @@ func main() {
 				switch ch[0] {
 				// movement
 				case VI_h:
-					ansi.CursorBackward(1)
+					sn.CursorLeft(1)
 				case VI_j:
-					sn.CursorRow++
-					ansi.CursorDown(1)
+					sn.CursorDown(1)
 				case VI_k:
 					sn.CursorRow--
 					ansi.CursorUp(1)
 				case VI_l:
-					ansi.CursorForward(1)
+					sn.CursorRight(1)
 
 				// delete
 				case VI_d:
@@ -63,8 +65,7 @@ func main() {
 			if sn.Mode == MD_INSERT {
 				switch ch[0] {
 				case VI_BACKSPACE:
-					sn.Lines[sn.CursorRow] = sn.Lines[sn.CursorRow][:len(sn.Lines[sn.CursorRow])-1]
-					ansi.Backspace()
+					sn.Backspace()
 				case VI_ENTER:
 					sn.AddLine(ch[0])
 				default:
