@@ -47,8 +47,9 @@ func InitSession() *session {
 		Height:    rows,
 		Mode:      MD_NORMAL,
 		Lines:     make(map[int]string),
-		CursorRow: CURSOR_COL_START,
-		CursorCol: CURSOR_ROW_START,
+		LastLine:  1,
+		CursorRow: CURSOR_ROW_START,
+		CursorCol: CURSOR_COL_START,
 		ColOffset: CURSOR_COL_START,
 		RowOffset: rows - 1,
 
@@ -58,15 +59,15 @@ func InitSession() *session {
 	}
 }
 
-func (s *session) InitWindow() {
+func (sn *session) InitWindow() {
 	ansi.EraseScreen()
-	ansi.CursorSetPos(s.Height, 0)
+	ansi.CursorSetPos(sn.Height, 0)
 	fmt.Print(ansi.Bright(MD_NORMAL))
 	ansi.CursorSetPos(0, 0)
 	fmt.Print(ansi.FgYellow("  1 "))
 }
 
-func (s *session) WinResizeListener() {
+func (sn *session) WinResizeListener() {
 	for {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, syscall.SIGWINCH)
@@ -77,33 +78,42 @@ func (s *session) WinResizeListener() {
 			log.Fatalln(err)
 		}
 
-		s.Height = c
-		s.Width = r
+		sn.Height = c
+		sn.Width = r
 	}
 }
 
-func (s *session) AddLine() {
-	s.LastLine++
+func (sn *session) AddLine(key byte) {
+	sn.LastLine++
 
 	// How much initial whitespace before line number
-	offset := int(math.Floor(math.Log10(float64(s.LastLine))+1)) - 1
+	offset := int(math.Floor(math.Log10(float64(sn.LastLine))+1)) - 1
 
-	ws := s.OffsetChars
-	if offsetCol > 0 {
+	ws := sn.OffsetChars
+	if sn.ColOffset > 0 {
 		trim := len(ws) - offset
-		ws = s.OffsetChars[:trim]
+		ws = sn.OffsetChars[:trim]
 	}
 
 	// print the new line number
-	ansi.CursorSetPos(s.LastLine, 0)
-	ln := ansi.FgYellow(fmt.Sprintf("%s%d ", ws, s.LastLine))
+	ansi.CursorSetPos(sn.LastLine, 0)
+	ln := ansi.FgYellow(fmt.Sprintf("%s%d ", ws, sn.LastLine))
 	fmt.Print(ln)
 
 	// place cursor in correct position
 	switch key {
 	case VI_ENTER, VI_o:
-		(*cursorPos)["row"]++
+		sn.CursorRow++
 	}
 
-	ansi.CursorSetPos((*cursorPos)["row"], CURSOR_COL_START)
+	ansi.CursorSetPos(sn.CursorRow, CURSOR_COL_START)
+}
+
+func (sn *session) SetMode(mode string) {
+	ansi.CursorSavePos()
+	sn.Mode = mode
+	ansi.CursorSetPos(sn.Height, 0)
+	ansi.EraseLine()
+	fmt.Print(ansi.Bright(mode))
+	ansi.CursorRestorePos()
 }

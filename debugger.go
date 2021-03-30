@@ -10,7 +10,7 @@ import (
 // Ex:
 // wr := debug("ttys012")
 // wr("I am writing into another terminal")
-func debug(charDevice string) func(string) {
+func Debug(charDevice string) func([]byte) {
 	dev := fmt.Sprintf("/dev/%s", charDevice)
 	f, err := os.OpenFile(dev, os.O_WRONLY, 0755)
 	if err != nil {
@@ -18,7 +18,8 @@ func debug(charDevice string) func(string) {
 	}
 	f.Write([]byte("\n"))
 
-	return func(txt string) {
-		f.Write([]byte(txt))
+	return func(b []byte) {
+		output := fmt.Sprintf("%v -> %s\n", b, b)
+		f.Write([]byte(output))
 	}
 }
