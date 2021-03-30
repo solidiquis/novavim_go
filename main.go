@@ -25,23 +25,6 @@ func switchMode(mode *string, newMode string) {
 	ansi.CursorRestorePos()
 }
 
-func terminalResizeEvent(col, row *int) {
-	for {
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, syscall.SIGWINCH)
-		<-sig
-
-		c, r, err := ansi.TerminalDimensions()
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		*col = c
-		*row = r
-	}
-}
-
-// TODO: Make work for 4+ digit line nums
 func newLine(cursorPos *map[string]int, lastLine int, key byte) {
 	// offset lastLine numbers from column 1
 	offsetWs := "  "
@@ -64,46 +47,10 @@ func newLine(cursorPos *map[string]int, lastLine int, key byte) {
 }
 
 func main() {
-	// for logging
-	f, _ := os.OpenFile("/dev/ttys015", os.O_WRONLY, 0755)
-
-	// Initialize window size
-	col, row, err := ansi.TerminalDimensions()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Initialize initial offsets
-	colOffset := CURSOR_COL_START
-
-	// Init mode
-	mode := MD_NORMAL
-
-	// Text and associated line number
-	lines := make(map[int]string)
-
-	// What line is the cursor on
-	currentLine := 1
-
-	// Listen for window resize, update col and row vals
-	go terminalResizeEvent(&col, &row)
-
-	// Set cursor start pos and monitor
-	cursorPos := map[string]int{
-		"col": CURSOR_COL_START,
-		"row": CURSOR_ROW_START,
-	}
-
-	// Initialize screen
-	ansi.EraseScreen()
-	ansi.UnbufferStdin()
-	ansi.UnechoStdin()
-	ansi.CursorSetPos(row, 0)
-	fmt.Print(ansi.Bright(MD_NORMAL))
-	ansi.CursorSetPos(0, 0)
-	fmt.Print(ansi.FgYellow("  1 "))
-
+	sn := InitSession()
 	stdin := make(chan string, 1)
+
+	go sn.WinResizeListener()
 	go ansi.GetChar(stdin)
 
 	for {
@@ -119,21 +66,20 @@ func main() {
 				switch ch[0] {
 				// movement
 				case VI_h:
-					f.Write([]byte(fmt.Sprint(cursorPos["col"], "\n")))
-					if cursorPos["col"] > colOffset {
+					if sn.CursorCol > colOffset {
 						ansi.CursorBackward(1)
-						cursorPos["col"]--
+						sn.CursorCol["col"]--
 					}
 				case VI_j:
 					currentLine++
-					cursorPos["row"]++
+					sn.CursorRow++
 					ansi.CursorDown(1)
 				case VI_k:
 					currentLine--
-					cursorPos["row"]--
+					sn.CursorRow--
 					ansi.CursorUp(1)
 				case VI_l:
-					if cursorPos["col"] < len(lines[currentLine])+CURSOR_COL_START { // should be using offset, not CURSOR_COL_START
+					if sn.CursorCol < len(lines[currentLine])+CURSOR_COL_START { // should be using offset, not CURSOR_COL_START
 						ansi.CursorForward(1)
 					}
 
@@ -172,7 +118,7 @@ func main() {
 				default:
 					fmt.Print(string(ch))
 					lines[currentLine] += string(ch)
-					cursorPos["col"]++
+					sn.CursorCol++
 				}
 			}
 		}
