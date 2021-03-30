@@ -129,6 +129,8 @@ func (sn *session) Backspace() {
 	sn.CursorCol--
 }
 
+// TODO: This one is broken
+// This is broken I suspect because Row can be decremented below zero
 func (sn *session) CursorRight(n int) {
 	if sn.CursorCol+n > sn.ColOffset+len(sn.Lines[sn.CursorRow]) {
 		return
@@ -147,6 +149,16 @@ func (sn *session) CursorLeft(n int) {
 	ansi.CursorBackward(n)
 }
 
+func (sn *session) CursorUp(n int) {
+	if sn.CursorRow-1 < 1 {
+		return
+	}
+
+	sn.CursorRow -= n
+	ansi.CursorUp(n)
+}
+
+// TODO: Set bottom-most boundaries
 func (sn *session) CursorDown(n int) {
 	if sn.CursorRow+n > sn.LastLine {
 		return
@@ -154,13 +166,20 @@ func (sn *session) CursorDown(n int) {
 
 	sn.CursorRow += n
 
+	// If next line is blank, jump to col-offset
 	ln, ok := sn.Lines[sn.CursorRow]
 	if !ok {
 		sn.CursorColHome()
 		return
 	}
 
+	if sn.CursorCol < len(ln)+sn.ColOffset {
+		ansi.CursorDown(n)
+		return
+	}
+
 	col := sn.ColOffset + len(ln)
+	sn.CursorCol = col
 	ansi.CursorSetPos(sn.CursorRow, col)
 }
 

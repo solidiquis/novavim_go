@@ -18,6 +18,7 @@ func main() {
 
 	for {
 		wr([]byte(fmt.Sprint(sn.CursorCol)))
+		wr([]byte(fmt.Sprint(sn.CursorRow)))
 		select {
 		case ch := <-stdin:
 			if ch[0] == VI_ESC {
