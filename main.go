@@ -35,8 +35,7 @@ func main() {
 				case VI_j:
 					sn.CursorDown(1)
 				case VI_k:
-					sn.CursorRow--
-					ansi.CursorUp(1)
+					sn.CursorUp(1)
 				case VI_l:
 					sn.CursorRight(1)
 
