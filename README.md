@@ -3,4 +3,4 @@ This is my attempt at making Vim from scratch in Go, meaning this project will u
 
 I love Vim, so by no means am I trying to make something better - in fact, this is going to be pretty hot garbage - but nevertheless I'm going to pursue this hopeless endeavor simply because it's fun and I have no life.
 
-<img src="https://github.com/solidiquis/novavim/blob/master/assets/demo.gif?raw=true">
+<img src="https://github.com/solidiquis/solidiquis/blob/master/assets/novavim.gif?raw=true">
