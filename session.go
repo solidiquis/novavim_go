@@ -129,8 +129,6 @@ func (sn *session) Backspace() {
 	sn.CursorCol--
 }
 
-// TODO: This one is broken
-// This is broken I suspect because Row can be decremented below zero
 func (sn *session) CursorRight(n int) {
 	if sn.CursorCol+n > sn.ColOffset+len(sn.Lines[sn.CursorRow]) {
 		return
